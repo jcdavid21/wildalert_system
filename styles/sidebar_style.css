@@ -1,0 +1,240 @@
+:root {
+    --dark-green: #054a29;
+    --light-green: #0e6245;
+    --hover-green: #0a5236;
+    --text-white: #f8f9fa;
+    --text-gray: #e0e0e0;
+    --border-color: #033a20;
+    --background-black: #111111;
+}
+
+/* General Sidebar Styles */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: var(--dark-green);
+    color: var(--text-white);
+    transition: all 0.3s ease;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar.collapsed .sidebar-header h3,
+.sidebar.collapsed .user-info,
+.sidebar.collapsed .sidebar-menu span,
+.sidebar.collapsed .menu-arrow {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-menu i {
+    margin-right: 0;
+}
+
+.sidebar.collapsed .submenu {
+    position: absolute;
+    left: 70px;
+    top: 0;
+    width: 180px;
+    z-index: 1001;
+    background-color: var(--light-green);
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-menu li:hover .submenu {
+    display: block;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: var(--dark-green);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.sidebar-toggle {
+    display: none;
+    cursor: pointer;
+    color: var(--text-white);
+}
+
+/* User Info Section */
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--light-green);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--dark-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-info span {
+    font-weight: 600;
+}
+
+.user-info small {
+    color: var(--text-gray);
+    font-size: 0.8rem;
+}
+
+/* Menu Items */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    position: relative;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: var(--text-white);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.sidebar-menu li a:hover {
+    background-color: var(--hover-green);
+}
+
+.sidebar-menu li.active > a {
+    background-color: var(--light-green);
+    border-left: 4px solid var(--text-white);
+}
+
+.sidebar-menu i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+}
+
+.menu-arrow {
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+li.open > a > .menu-arrow {
+    transform: rotate(90deg);
+}
+
+/* Submenu */
+.submenu {
+    list-style: none;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+li.open > .submenu {
+    max-height: 200px;
+}
+
+.submenu li a {
+    padding: 10px 15px 10px 47px;
+    font-size: 0.9rem;
+}
+
+.submenu li.active a {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Content Area */
+.content-wrapper {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    background-color: #f4f6f9;
+    padding: 20px;
+}
+
+.content-wrapper.expanded {
+    margin-left: 70px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+
+    .sidebar .sidebar-header h3,
+    .sidebar .user-info,
+    .sidebar .sidebar-menu span,
+    .sidebar .menu-arrow {
+        display: none;
+    }
+
+    .sidebar .sidebar-menu i {
+        margin-right: 0;
+    }
+
+    .content-wrapper {
+        margin-left: 70px;
+    }
+
+    .sidebar-toggle {
+        display: block;
+    }
+
+    .sidebar.collapsed {
+        width: 0;
+        overflow: hidden;
+    }
+
+    .content-wrapper.expanded {
+        margin-left: 0;
+    }
+
+    .sidebar:not(.collapsed) {
+        width: 250px;
+    }
+
+    .sidebar:not(.collapsed) .sidebar-header h3,
+    .sidebar:not(.collapsed) .user-info,
+    .sidebar:not(.collapsed) .sidebar-menu span,
+    .sidebar:not(.collapsed) .menu-arrow {
+        display: block;
+    }
+
+    .sidebar:not(.collapsed) .sidebar-menu i {
+        margin-right: 12px;
+    }
+}
