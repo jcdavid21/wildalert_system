@@ -1,5 +1,7 @@
 # WildAlert Setup Guide
 
+## YOU MUST NEED STRONG WIFI CONNECTION
+
 ## 1. Create the Database
 - Create a MySQL database named: `WildAlert_db`
 - Import the SQL file located at: `backend/dbase`
@@ -36,4 +38,8 @@ Open `index.php` in your browser or run it via a PHP server.
 
 ---
 
-Ensure your environment variables are set in a `.env` file for any required credentials or configurations.
+##NOTE:
+There is a folder named for_test_images inside the images directory that contains sample photos. 
+You can also download additional images from Google to test with other species.
+
+
