@@ -187,7 +187,8 @@ $status_result = $conn->query($status_query);
                                         <td><?php echo $report['report_id']; ?></td>
                                         <td>
                                             <?php if (!empty($report['image_path'])): ?>
-                                                <img src="<?php echo $report['image_path']; ?>" alt="Species Image" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                                                <?php $image_filename = basename($report['image_path']); ?>
+                                                <img src="../images/reported_images/<?php echo $image_filename; ?>" alt="Species Image" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
                                             <?php else: ?>
                                                 <span class="text-muted">No image</span>
                                             <?php endif; ?>

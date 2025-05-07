@@ -142,9 +142,13 @@ $report = $report_result->fetch_assoc();
                         <?php if (!empty($report['image_path'])): ?>
                             <div class="mb-4">
                                 <div class="card">
-                                    <img src="<?php echo $report['image_path']; ?>" class="card-img-top" alt="Species Image" style="max-height: 300px; object-fit: contain;">
+                                    <?php 
+                                    // Extract just the filename without the path
+                                    $image_filename = basename($report['image_path']);
+                                    ?>
+                                    <img src="../images/reported_images/<?php echo $image_filename; ?>" class="card-img-top" alt="Species Image" style="max-height: 300px; object-fit: contain;">
                                     <div class="card-footer text-center">
-                                        <a href="<?php echo $report['image_path']; ?>" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <a href="reported_images/<?php echo $image_filename; ?>" class="btn btn-sm btn-outline-primary" target="_blank">
                                             <i class="fas fa-expand"></i> View Full Size
                                         </a>
                                     </div>
