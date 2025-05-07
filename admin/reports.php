@@ -50,6 +50,24 @@ function getStatusName($conn, $status_id) {
     return "Unknown";
 }
 
+// Function to fix image path
+function fixImagePath($image_path) {
+    $default_image = "../images/default_species.jpg";
+    
+    // If the path has /images/species/ or \images\species\ in it, extract just the filename
+    if (strpos($image_path, '/images/reported_images/') !== false || strpos($image_path, '\\images\\reported_images\\') !== false) {
+        $image_path = basename($image_path);
+    }
+    
+    // Use only the filename, don't check file existence here
+    if (empty($image_path)) {
+        $image_path = basename($default_image); // Use default image filename
+    }
+    
+    // Always return the path with the correct directory
+    return "../images/reported_images/" . $image_path;
+}
+
 // Get all reports with relevant details
 $query = "SELECT r.*, sr.status_rp_name, c.category_name, a.email as reporter_email
           FROM tbl_reports r
@@ -277,7 +295,8 @@ while ($status = $status_result->fetch_assoc()) {
                         <tr>
                             <td><?php echo $report['report_id']; ?></td>
                             <td>
-                                <img src="<?php echo $report['image_path']; ?>" alt="<?php echo $report['species_name']; ?>" class="report-image" onclick="showImage('<?php echo $report['image_path']; ?>')">
+                                <?php $fixed_image_path = fixImagePath($report['image_path']); ?>
+                                <img src="<?php echo $fixed_image_path; ?>" alt="<?php echo $report['species_name']; ?>" class="report-image" onclick="showImage('<?php echo $fixed_image_path; ?>')">
                             </td>
                             <td>
                                 <strong><?php echo $report['species_name']; ?></strong><br>

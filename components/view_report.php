@@ -25,10 +25,9 @@ $report_id = $_GET['id'];
 $user_id = $_SESSION['user_id'];
 
 // Get report details
-$report_query = "SELECT r.*, c.category_name, s.status_name, sr.status_rp_name 
+$report_query = "SELECT r.*, c.category_name, sr.status_rp_name 
                 FROM tbl_reports r
                 JOIN tbl_category c ON r.category_id = c.category_id
-                JOIN tbl_status s ON r.status_id = s.status_id
                 JOIN tbl_status_report sr ON r.status_report_id = sr.status_rp_id
                 WHERE r.report_id = ? AND r.acc_id = ?";
 $stmt = $conn->prepare($report_query);
@@ -121,7 +120,7 @@ $report = $report_result->fetch_assoc();
                         <div class="mb-3 row">
                             <label class="col-sm-4 fw-bold">Species Status:</label>
                             <div class="col-sm-8">
-                                <span class="badge bg-<?php echo ($report['status_name'] == 'Endangared') ? 'danger' : 'success'; ?>">
+                                <span class="badge bg-<?php echo ($report['status_name'] == 'Endangared') ? 'danger' : 'primary'; ?>">
                                     <?php echo htmlspecialchars($report['status_name']); ?>
                                 </span>
                             </div>

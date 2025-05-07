@@ -221,6 +221,17 @@ if (session_status() === PHP_SESSION_NONE) {
             }
         }
 
+        .fallback-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+            color: #999;
+            height: 100%;
+            width: 100%;
+            font-size: 14px;
+        }
+
         @media screen and (max-width: 768px) {
             .content {
                 margin-left: 0;
@@ -250,7 +261,6 @@ if (session_status() === PHP_SESSION_NONE) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-
             border-bottom: 2px solid #014421;
             margin-bottom: 20px;
         }
@@ -277,170 +287,181 @@ if (session_status() === PHP_SESSION_NONE) {
 </head>
 
 <body>
-    <?php include 'navbar.php'; ?>
+<?php include 'navbar.php'; ?>
 
-    <?php include 'sidebar.php'; ?>
+<?php include 'sidebar.php'; ?>
 
-    <div class="content">
-        <div class="flex">
-            <h1 class="section-title">Species Library</h1>
-            <a href="models.php">
-                <button>
-                    3D Models
-                </button>
-            </a>
-        </div>
-
-        <div class="filters">
-            <form method="GET" action="">
-                <div class="form-group">
-                    <select name="category" id="category">
-                        <option value="">All Categories</option>
-                        <?php
-                        $categoryQuery = "SELECT * FROM tbl_category";
-                        $stmt = $conn->prepare($categoryQuery);
-                        $stmt->execute();
-                        $categoryResult = $stmt->get_result();
-
-
-                        if ($categoryResult->num_rows > 0) {
-                            while ($row = $categoryResult->fetch_assoc()) {
-                                $selected = (isset($_GET['category']) && $_GET['category'] == $row['category_id']) ? 'selected' : '';
-                                echo "<option value='" . $row['category_id'] . "' $selected>" . $row['category_name'] . "</option>";
-                            }
-                        }
-                        ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <select name="type" id="type">
-                        <option value="">All Types</option>
-                        <?php
-                        $typeQuery = "SELECT * FROM tbl_species_type";
-                        $typeResult = $conn->query($typeQuery);
-
-                        if ($typeResult->num_rows > 0) {
-                            while ($row = $typeResult->fetch_assoc()) {
-                                $selected = (isset($_GET['type']) && $_GET['type'] == $row['type_id']) ? 'selected' : '';
-                                echo "<option value='" . $row['type_id'] . "' $selected>" . $row['type_name'] . "</option>";
-                            }
-                        }
-                        ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <input type="text" name="search" placeholder="Search species..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                </div>
-
-                <button type="submit" class="search-btn">
-                    <i class="fas fa-search"></i> Search
-                </button>
-            </form>
-        </div>
-
-        <div class="species-grid">
-            <?php
-            // Build the SQL query based on filters
-            $sql = "SELECT s.*, c.category_name, t.type_name 
-                   FROM tbl_species s
-                   JOIN tbl_category c ON s.category_id = c.category_id
-                   JOIN tbl_species_type t ON s.type_id = t.type_id
-                   WHERE 1=1";
-
-            if (isset($_GET['category']) && !empty($_GET['category'])) {
-                $categoryId = $conn->real_escape_string($_GET['category']);
-                $sql .= " AND s.category_id = '$categoryId'";
-            }
-
-            if (isset($_GET['type']) && !empty($_GET['type'])) {
-                $typeId = $conn->real_escape_string($_GET['type']);
-                $sql .= " AND s.type_id = '$typeId'";
-            }
-
-            if (isset($_GET['search']) && !empty($_GET['search'])) {
-                $search = $conn->real_escape_string($_GET['search']);
-                $sql .= " AND (s.species_name LIKE '%$search%' OR s.scientific_name LIKE '%$search%')";
-            }
-
-            $sql .= " ORDER BY s.species_name ASC";
-            $result = $conn->query($sql);
-
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '<div class="species-card">';
-                    echo '<img src="' . $row['image_path'] . '" alt="' . $row['species_name'] . '" class="species-image" onerror="this.src=\'../images/placeholder.jpg\'">';
-                    echo '<div class="species-info">';
-                    echo '<div class="species-name">' . $row['species_name'] . '</div>';
-                    echo '<div class="scientific-name">' . $row['scientific_name'] . '</div>';
-                    echo '<div class="species-details">';
-                    echo '<p><strong>Kingdom:</strong> ' . $row['kingdom'] . '</p>';
-                    echo '<p><strong>Group:</strong> ' . $row['group_name'] . '</p>';
-                    echo '<p><strong>Category:</strong> ' . $row['category_name'] . '</p>';
-                    echo '<p><strong>Type:</strong> ' . $row['type_name'] . '</p>';
-                    echo '</div>';
-                    // Add the View Species button with data attributes
-                    echo '<button class="view-btn" data-species-id="' . $row['species_id'] . '" data-species-name="' . $row['species_name'] . '" data-scientific-name="' . $row['scientific_name'] . '" data-image="' . $row['image_path'] . '">';
-                    echo '<i class="fas fa-eye"></i> View Species';
-                    echo '</button>';
-                    echo '</div>';
-                    echo '</div>';
-                }
-            } else {
-                echo '<div class="no-results">';
-                echo '<i class="fas fa-search" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>';
-                echo '<h3>No species found</h3>';
-                echo '<p>Try adjusting your search criteria or browse all species.</p>';
-                echo '</div>';
-            }
-
-            $conn->close();
-            ?>
-        </div>
+<div class="content">
+    <div class="flex">
+        <h1 class="section-title">Species Library</h1>
+        <!-- <a href="models.php">
+            <button>
+                3D Models
+            </button>
+        </a> -->
     </div>
 
-    <!-- Species Details Modal -->
-    <div id="speciesModal" class="species-modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <div id="modalContent">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner"></i>
-                </div>
+    <div class="filters">
+        <form method="GET" action="">
+            <div class="form-group">
+                <select name="category" id="category">
+                    <option value="">All Categories</option>
+                    <?php
+                    $categoryQuery = "SELECT * FROM tbl_category";
+                    $stmt = $conn->prepare($categoryQuery);
+                    $stmt->execute();
+                    $categoryResult = $stmt->get_result();
+
+
+                    if ($categoryResult->num_rows > 0) {
+                        while ($row = $categoryResult->fetch_assoc()) {
+                            $selected = (isset($_GET['category']) && $_GET['category'] == $row['category_id']) ? 'selected' : '';
+                            echo "<option value='" . $row['category_id'] . "' $selected>" . $row['category_name'] . "</option>";
+                        }
+                    }
+                    ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <select name="type" id="type">
+                    <option value="">All Types</option>
+                    <?php
+                    $typeQuery = "SELECT * FROM tbl_species_type";
+                    $typeResult = $conn->query($typeQuery);
+
+                    if ($typeResult->num_rows > 0) {
+                        while ($row = $typeResult->fetch_assoc()) {
+                            $selected = (isset($_GET['type']) && $_GET['type'] == $row['type_id']) ? 'selected' : '';
+                            echo "<option value='" . $row['type_id'] . "' $selected>" . $row['type_name'] . "</option>";
+                        }
+                    }
+                    ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <input type="text" name="search" placeholder="Search species..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+            </div>
+
+            <button type="submit" class="search-btn">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
+    </div>
+
+    <div class="species-grid">
+        <?php
+        // Build the SQL query based on filters
+        $sql = "SELECT s.*, c.category_name, t.type_name 
+               FROM tbl_species s
+               JOIN tbl_category c ON s.category_id = c.category_id
+               JOIN tbl_species_type t ON s.type_id = t.type_id
+               WHERE 1=1";
+
+        if (isset($_GET['category']) && !empty($_GET['category'])) {
+            $categoryId = $conn->real_escape_string($_GET['category']);
+            $sql .= " AND s.category_id = '$categoryId'";
+        }
+
+        if (isset($_GET['type']) && !empty($_GET['type'])) {
+            $typeId = $conn->real_escape_string($_GET['type']);
+            $sql .= " AND s.type_id = '$typeId'";
+        }
+
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $search = $conn->real_escape_string($_GET['search']);
+            $sql .= " AND (s.species_name LIKE '%$search%' OR s.scientific_name LIKE '%$search%')";
+        }
+
+        $sql .= " ORDER BY s.species_name ASC";
+        $result = $conn->query($sql);
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // FIXED: Process the image path correctly
+                $imagePath = processImagePath($row['image_path']);
+                
+                echo '<div class="species-card">';
+                echo '<div class="species-image-container" style="height: 200px; width: 100%; position: relative;">';
+                echo '<img src="' . $imagePath . '" alt="' . $row['species_name'] . '" class="species-image" style="height: 100%; width: 100%; object-fit: cover;" 
+                      onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">';
+                echo '<div class="fallback-image" style="display: none; position: absolute; top: 0; left: 0;"><i class="fas fa-image" style="margin-right: 8px;"></i> Image not available</div>';
+                echo '</div>';
+                echo '<div class="species-info">';
+                echo '<div class="species-name">' . $row['species_name'] . '</div>';
+                echo '<div class="scientific-name">' . $row['scientific_name'] . '</div>';
+                echo '<div class="species-details">';
+                echo '<p><strong>Kingdom:</strong> ' . $row['kingdom'] . '</p>';
+                echo '<p><strong>Group:</strong> ' . $row['group_name'] . '</p>';
+                echo '<p><strong>Category:</strong> ' . $row['category_name'] . '</p>';
+                echo '<p><strong>Type:</strong> ' . $row['type_name'] . '</p>';
+                echo '</div>';
+                // Add the View Species button with properly processed image path
+                echo '<button class="view-btn" data-species-id="' . $row['species_id'] . '" data-species-name="' . $row['species_name'] . '" data-scientific-name="' . $row['scientific_name'] . '" data-image="' . $imagePath . '">';
+                echo '<i class="fas fa-eye"></i> View Species';
+                echo '</button>';
+                echo '</div>';
+                echo '</div>';
+            }
+        } else {
+            echo '<div class="no-results">';
+            echo '<i class="fas fa-search" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>';
+            echo '<h3>No species found</h3>';
+            echo '<p>Try adjusting your search criteria or browse all species.</p>';
+            echo '</div>';
+        }
+
+        $conn->close();
+        
+        /**
+         * Process image path to ensure it works on Windows and other systems
+         * 
+         * @param string $path The original image path from database
+         * @return string The corrected image path
+         */
+        function processImagePath($path) {
+            if (empty($path)) {
+                return '../images/placeholder.jpg'; // Default placeholder image
+            }
+            
+            $filename = basename($path);
+            
+            // Adjust this path based on your actual directory structure
+            return '../images/species/' . $filename;
+            
+        }
+        ?>
+    </div>
+</div>
+
+<!-- Species Details Modal -->
+<div id="speciesModal" class="species-modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="modalContent">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner"></i>
             </div>
         </div>
     </div>
+</div>
 
-    <?php include 'footer.php'; ?>
+<?php include 'footer.php'; ?>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-            const content = document.querySelector('.content');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const content = document.querySelector('.content');
 
-            // Setup sidebar toggle functionality
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('active');
+        // Setup sidebar toggle functionality
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
 
-                    // Adjust content margin based on sidebar state
-                    if (window.innerWidth > 768) {
-                        if (sidebar.classList.contains('active')) {
-                            content.style.marginLeft = '250px';
-                        } else {
-                            content.style.marginLeft = '0';
-                        }
-                    }
-                });
-            }
-
-            // Handle window resize
-            window.addEventListener('resize', function() {
-                if (window.innerWidth <= 768) {
-                    content.style.marginLeft = '0';
-                } else {
+                // Adjust content margin based on sidebar state
+                if (window.innerWidth > 768) {
                     if (sidebar.classList.contains('active')) {
                         content.style.marginLeft = '250px';
                     } else {
@@ -448,135 +469,159 @@ if (session_status() === PHP_SESSION_NONE) {
                     }
                 }
             });
+        }
 
-            // Initial setup
+        // Handle window resize
+        window.addEventListener('resize', function() {
             if (window.innerWidth <= 768) {
                 content.style.marginLeft = '0';
-                sidebar.classList.remove('active');
             } else {
-                sidebar.classList.add('active');
-                content.style.marginLeft = '250px';
-            }
-
-            // Species modal functionality
-            const modal = document.getElementById('speciesModal');
-            const modalContent = document.getElementById('modalContent');
-            const closeModal = document.querySelector('.close-modal');
-
-            // Close modal when clicking the X
-            if (closeModal) {
-                closeModal.addEventListener('click', function() {
-                    modal.style.display = 'none';
-                });
-            }
-
-            // Close modal when clicking outside of it
-            window.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
+                if (sidebar.classList.contains('active')) {
+                    content.style.marginLeft = '250px';
+                } else {
+                    content.style.marginLeft = '0';
                 }
-            });
-
-            // Add click event to all view buttons
-            document.querySelectorAll('.view-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const speciesId = this.getAttribute('data-species-id');
-                    const speciesName = this.getAttribute('data-species-name');
-                    const scientificName = this.getAttribute('data-scientific-name');
-                    const imagePath = this.getAttribute('data-image');
-
-                    // Show modal with loading spinner
-                    modal.style.display = 'block';
-                    modalContent.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
-
-                    // Fetch species details
-                    fetchSpeciesDetails(speciesId, speciesName, scientificName, imagePath);
-                });
-            });
+            }
         });
 
-        function fetchSpeciesDetails(speciesId, speciesName, scientificName, imagePath) {
-            // Fix image path if needed
-            const fixedImagePath = imagePath || '../images/placeholder.jpg';
-            const modal = document.getElementById('speciesModal');
-            const modalContent = document.getElementById('modalContent');
-
-            // Show modal with loading spinner
-            modal.style.display = 'block';
-            modalContent.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
-
-            // Make API call directly to the Python backend
-            fetch('http://localhost:8800/get_species_details', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        species_id: speciesId,
-                        species_name: speciesName,
-                        scientific_name: scientificName
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Create modal content HTML
-                    let modalHTML = `
-                    <div class="species-header">
-                        <img src="${fixedImagePath}" class="species-modal-image" onerror="this.src='../images/placeholder.jpg'">
-                        <div class="species-modal-info">
-                            <h2>${speciesName}</h2>
-                            <p><em>${scientificName}</em></p>
-                            <hr>
-                        </div>
-                    </div>
-                    <div class="species-full-details">
-                        ${data.details}
-                    </div>
-                `;
-
-                    // Update modal content
-                    modalContent.innerHTML = modalHTML;
-                })
-                .catch(error => {
-                    console.error('Error fetching species details:', error);
-
-                    // Create fallback content
-                    const fallbackHTML = `
-                    <h2>Description</h2>
-                    <p>Information about this species is currently being compiled. Check back soon for detailed information about ${speciesName} (${scientificName}).</p>
-                    
-                    <h2>Basic Information</h2>
-                    <ul>
-                        <li><strong>Common Name:</strong> ${speciesName}</li>
-                        <li><strong>Scientific Name:</strong> ${scientificName}</li>
-                    </ul>
-                    
-                    <h2>Note</h2>
-                    <p>We're currently unable to retrieve detailed information about this species. This could be due to server load or connectivity issues. Please try again later.</p>
-                `;
-
-                    modalContent.innerHTML = `
-                    <div class="species-header">
-                        <img src="${fixedImagePath}" class="species-modal-image" onerror="this.src='../images/placeholder.jpg'">
-                        <div class="species-modal-info">
-                            <h2>${speciesName}</h2>
-                            <p><em>${scientificName}</em></p>
-                            <hr>
-                        </div>
-                    </div>
-                    <div class="species-full-details">
-                        ${fallbackHTML}
-                    </div>
-                `;
-                });
+        // Initial setup
+        if (window.innerWidth <= 768) {
+            content.style.marginLeft = '0';
+            sidebar.classList.remove('active');
+        } else {
+            sidebar.classList.add('active');
+            content.style.marginLeft = '250px';
         }
-    </script>
+
+        // Species modal functionality
+        const modal = document.getElementById('speciesModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModal = document.querySelector('.close-modal');
+
+        // Close modal when clicking the X
+        if (closeModal) {
+            closeModal.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        }
+
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Add click event to all view buttons
+        document.querySelectorAll('.view-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const speciesId = this.getAttribute('data-species-id');
+                const speciesName = this.getAttribute('data-species-name');
+                const scientificName = this.getAttribute('data-scientific-name');
+                const imagePath = this.getAttribute('data-image');
+
+                // Show modal with loading spinner
+                modal.style.display = 'block';
+                modalContent.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
+
+                // Fetch species details
+                fetchSpeciesDetails(speciesId, speciesName, scientificName, imagePath);
+            });
+        });
+    });
+
+    function fetchSpeciesDetails(speciesId, speciesName, scientificName, imagePath) {
+        
+        const modal = document.getElementById('speciesModal');
+        const modalContent = document.getElementById('modalContent');
+
+        // Show modal with loading spinner
+        modal.style.display = 'block';
+        modalContent.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
+
+        fetch('http://localhost:8800/get_species_details', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    species_id: speciesId,
+                    species_name: speciesName,
+                    scientific_name: scientificName
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Create modal content HTML with fallback for image
+                let modalHTML = `
+                <div class="species-header">
+                    <div style="width: 300px; height: 200px; position: relative; margin-right: 20px;">
+                        <img src="${imagePath}" class="species-modal-image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="fallback-image" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;">
+                            <div><i class="fas fa-image" style="margin-right: 8px;"></i> Image not available</div>
+                        </div>
+                    </div>
+                    <div class="species-modal-info">
+                        <h2>${speciesName}</h2>
+                        <p><em>${scientificName}</em></p>
+                        <hr>
+                    </div>
+                </div>
+                <div class="species-full-details">
+                    ${data.details}
+                </div>
+            `;
+
+                // Update modal content
+                modalContent.innerHTML = modalHTML;
+            })
+            .catch(error => {
+                console.error('Error fetching species details:', error);
+
+                // Create fallback content with improved image handling
+                const fallbackHTML = `
+                <h2>Description</h2>
+                <p>Information about this species is currently being compiled. Check back soon for detailed information about ${speciesName} (${scientificName}).</p>
+                
+                <h2>Basic Information</h2>
+                <ul>
+                    <li><strong>Common Name:</strong> ${speciesName}</li>
+                    <li><strong>Scientific Name:</strong> ${scientificName}</li>
+                </ul>
+                
+                <h2>Note</h2>
+                <p>We're currently unable to retrieve detailed information about this species. This could be due to server load or connectivity issues. Please try again later.</p>
+            `;
+
+                modalContent.innerHTML = `
+                <div class="species-header">
+                    <div style="width: 300px; height: 200px; position: relative; margin-right: 20px;">
+                        <img src="${imagePath}" class="species-modal-image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="fallback-image" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;">
+                            <div><i class="fas fa-image" style="margin-right: 8px;"></i> Image not available</div>
+                        </div>
+                    </div>
+                    <div class="species-modal-info">
+                        <h2>${speciesName}</h2>
+                        <p><em>${scientificName}</em></p>
+                        <hr>
+                    </div>
+                </div>
+                <div class="species-full-details">
+                    ${fallbackHTML}
+                </div>
+            `;
+            });
+    }
+</script>
 </body>
 
 </html>

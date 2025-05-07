@@ -196,12 +196,7 @@
             <li><a href="index.php">Home</a></li>
             <li><a href="library.php">Library</a></li>
             <li><a href="reports.php">Reports</a></li>
-            <?php 
-                if(isset($_SESSION["user_id"]))
-                {
-                    echo '<li><a href="upload-image.php">Upload-Image</a></li>';
-                }
-            ?>
+            <li><a href="upload-image.php">Upload-Image</a></li>
             <li class="user-dropdown">
                 <?php if(isset($_SESSION['user_id'])): ?>
                     <div class="user-icon">

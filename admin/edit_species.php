@@ -420,7 +420,22 @@ $conn->close();
                             <p style="margin-top: 5px; color: #666; font-size: 0.85rem;">
                                 Leave empty to keep current image. Accepted formats: JPG, JPEG, PNG, WEBP, AVIF.
                             </p>
-                            <img src="<?php echo htmlspecialchars($species['image_path']); ?>" alt="Current species image" class="image-preview" id="currentImagePreview">
+                            <?php 
+                                $image_path = $species['image_path'];
+                                $default_image = "../images/default_species.jpg";
+
+                                // If the path has /images/species/ or \images\species\ in it, extract just the filename
+                                if (strpos($image_path, '/images/species/') !== false || strpos($image_path, '\\images\\species\\') !== false) {
+                                    $image_path = basename($image_path);
+                                }
+
+                                // Use only the filename, don't check file existence here
+                                // This avoids path separator issues on Windows
+                                if (empty($image_path)) {
+                                    $image_path = basename($default_image); // Use default image filename
+                                }
+                            ?>
+                            <img src="/images/species/<?php echo htmlspecialchars($image_path); ?>" alt="Current species image" class="image-preview" id="currentImagePreview">
                         </div>
 
                         <div class="btn-container">

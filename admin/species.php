@@ -17,18 +17,18 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 2) {
 // Handle species deletion if requested
 if (isset($_POST['delete_species']) && isset($_POST['species_id'])) {
     $species_id = $_POST['species_id'];
-    
+
     // Record audit trail before deletion
     $admin_email = $_SESSION['user_email'];
     $activity = "Deleted species ID: $species_id";
     $conn->query("INSERT INTO tbl_audit_trail (trail_username, trail_activity, trail_date) 
                   VALUES ('$admin_email', '$activity', NOW())");
-    
+
     // Delete species
     $delete_query = "DELETE FROM tbl_species WHERE species_id = ?";
     $stmt = $conn->prepare($delete_query);
     $stmt->bind_param("i", $species_id);
-    
+
     if ($stmt->execute()) {
         $_SESSION['message'] = "Species deleted successfully";
         $_SESSION['message_type'] = "success";
@@ -36,7 +36,7 @@ if (isset($_POST['delete_species']) && isset($_POST['species_id'])) {
         $_SESSION['message'] = "Error deleting species: " . $conn->error;
         $_SESSION['message_type'] = "danger";
     }
-    
+
     $stmt->close();
     header("Location: species.php");
     exit();
@@ -74,6 +74,7 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -148,7 +149,8 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
             min-width: 200px;
         }
 
-        .search-box input, .filter-select select {
+        .search-box input,
+        .filter-select select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -228,7 +230,9 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
             gap: 8px;
         }
 
-        .edit-btn, .delete-btn, .view-btn {
+        .edit-btn,
+        .delete-btn,
+        .view-btn {
             border: none;
             padding: 6px 10px;
             border-radius: 4px;
@@ -305,11 +309,25 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
             color: white;
         }
 
-        .category-animalia { background-color: #3498db; }
-        .category-fungi { background-color: #9b59b6; }
-        .category-monera { background-color: #e67e22; }
-        .category-protista { background-color: #f1c40f; }
-        .category-plantae { background-color: #2ecc71; }
+        .category-animalia {
+            background-color: #3498db;
+        }
+
+        .category-fungi {
+            background-color: #9b59b6;
+        }
+
+        .category-monera {
+            background-color: #e67e22;
+        }
+
+        .category-protista {
+            background-color: #f1c40f;
+        }
+
+        .category-plantae {
+            background-color: #2ecc71;
+        }
 
         /* Responsive table */
         @media (max-width: 992px) {
@@ -324,11 +342,11 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                 flex-direction: column;
                 align-items: stretch;
             }
-            
+
             .search-filter {
                 width: 100%;
             }
-            
+
             .total-count {
                 width: 100%;
                 justify-content: center;
@@ -521,13 +539,41 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
             margin-top: 5px;
         }
 
-        .status-lc { background-color: #2ecc71; } /* Least Concern */
-        .status-nt { background-color: #3498db; } /* Near Threatened */
-        .status-vu { background-color: #f1c40f; } /* Vulnerable */
-        .status-en { background-color: #e67e22; } /* Endangered */
-        .status-cr { background-color: #e74c3c; } /* Critically Endangered */
-        .status-ew { background-color: #9b59b6; } /* Extinct in the Wild */
-        .status-ex { background-color: #34495e; } /* Extinct */
+        .status-lc {
+            background-color: #2ecc71;
+        }
+
+        /* Least Concern */
+        .status-nt {
+            background-color: #3498db;
+        }
+
+        /* Near Threatened */
+        .status-vu {
+            background-color: #f1c40f;
+        }
+
+        /* Vulnerable */
+        .status-en {
+            background-color: #e67e22;
+        }
+
+        /* Endangered */
+        .status-cr {
+            background-color: #e74c3c;
+        }
+
+        /* Critically Endangered */
+        .status-ew {
+            background-color: #9b59b6;
+        }
+
+        /* Extinct in the Wild */
+        .status-ex {
+            background-color: #34495e;
+        }
+
+        /* Extinct */
 
         @media (max-width: 768px) {
             .species-detail-header {
@@ -540,12 +586,14 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                 max-height: 250px;
             }
 
-            .species-meta, .species-stats {
+            .species-meta,
+            .species-stats {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
     <?php include 'sidebar.php'; ?>
 
@@ -610,15 +658,21 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                         if ($result && $result->num_rows > 0) {
                             while ($species = $result->fetch_assoc()) {
                                 $category_class = "category-" . strtolower($species['category_name']);
-                                
-                                // Check if image exists on server
+
                                 $image_path = $species['image_path'];
-                                $default_image = "/images/default_species.jpg";
-                                
-                                if (!file_exists($_SERVER['DOCUMENT_ROOT'] . $image_path)) {
-                                    $image_path = $default_image;
+                                $default_image = "../images/default_species.jpg";
+
+                                // If the path has /images/species/ or \images\species\ in it, extract just the filename
+                                if (strpos($image_path, '/images/species/') !== false || strpos($image_path, '\\images\\species\\') !== false) {
+                                    $image_path = basename($image_path);
                                 }
-                                
+
+                                // Use only the filename, don't check file existence here
+                                // This avoids path separator issues on Windows
+                                if (empty($image_path)) {
+                                    $image_path = basename($default_image); // Use default image filename
+                                }
+
                                 // Prepare species data for view modal (as JSON)
                                 $species_data = json_encode([
                                     'id' => $species['species_id'],
@@ -629,37 +683,37 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                                     'image' => $image_path,
                                     'date_created' => date('M d, Y', strtotime($species['date_created']))
                                 ]);
-                                
+
                                 echo '<tr>
-                                    <td><img src="' . htmlspecialchars($image_path) . '" alt="' . htmlspecialchars($species['species_name']) . '" class="species-image"></td>
-                                    <td>' . htmlspecialchars($species['species_name']) . '</td>
-                                    <td><em>' . htmlspecialchars($species['scientific_name']) . '</em></td>
-                                    <td><span class="category-badge ' . $category_class . '">' . htmlspecialchars($species['category_name']) . '</span></td>
-                                    <td>' . htmlspecialchars($species['type_name']) . '</td>
-                                    <td>' . date('M d, Y', strtotime($species['date_created'])) . '</td>
-                                    <td class="species-actions">
-                                        <button class="view-btn" title="View Details" onclick=\'openViewModal(' . $species_data . ')\'>
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <a href="edit_species.php?id=' . $species['species_id'] . '" class="edit-btn" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="delete-btn" title="Delete" 
-                                            onclick="openDeleteModal(' . $species['species_id'] . ', \'' . addslashes($species['species_name']) . '\')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>';
+            <td><img src="../images/species/' . htmlspecialchars(str_replace('\\', '/', $image_path)) . '" alt="' . htmlspecialchars($species['species_name']) . '" class="species-image"></td>
+            <td>' . htmlspecialchars($species['species_name']) . '</td>
+            <td><em>' . htmlspecialchars($species['scientific_name']) . '</em></td>
+            <td><span class="category-badge ' . $category_class . '">' . htmlspecialchars($species['category_name']) . '</span></td>
+            <td>' . htmlspecialchars($species['type_name']) . '</td>
+            <td>' . date('M d, Y', strtotime($species['date_created'])) . '</td>
+            <td class="species-actions">
+                <button class="view-btn" title="View Details" onclick=\'openViewModal(' . $species_data . ')\'>
+                    <i class="fas fa-eye"></i>
+                </button>
+                <a href="edit_species.php?id=' . $species['species_id'] . '" class="edit-btn" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button class="delete-btn" title="Delete" 
+                    onclick="openDeleteModal(' . $species['species_id'] . ', \'' . addslashes($species['species_name']) . '\')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>';
                             }
                         } else {
                             echo '<tr>
-                                <td colspan="7" class="empty-table">
-                                    <div>
-                                    <i class="fas fa-leaf"></i>
-                                    <p>No species found</p>
-                                    </div>
-                                </td>
-                            </tr>';
+        <td colspan="7" class="empty-table">
+            <div>
+            <i class="fas fa-leaf"></i>
+            <p>No species found</p>
+            </div>
+        </td>
+    </tr>';
                         }
                         ?>
                     </tbody>
@@ -703,7 +757,7 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                     <div class="species-detail-info">
                         <h2 id="viewSpeciesName" class="species-detail-name"></h2>
                         <p id="viewSpeciesScientific" class="species-detail-scientific"></p>
-                        
+
                         <div class="species-meta">
                             <div class="meta-item">
                                 <span class="meta-label">Category</span>
@@ -722,7 +776,7 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                                 <span id="viewSpeciesDate" class="meta-value"></span>
                             </div>
                         </div>
-                        
+
                         <div class="meta-item">
                             <span class="meta-label">Conservation Status</span>
                             <span id="viewSpeciesConservationStatusContainer"></span>
@@ -743,17 +797,17 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
         // Delete confirmation modal
         const deleteModal = document.getElementById('deleteModal');
         const viewModal = document.getElementById('viewModal');
-        
+
         function openDeleteModal(speciesId, speciesName) {
             document.getElementById('speciesIdToDelete').value = speciesId;
             document.getElementById('speciesNameToDelete').textContent = speciesName;
             deleteModal.style.display = 'block';
         }
-        
+
         function closeDeleteModal() {
             deleteModal.style.display = 'none';
         }
-        
+
         // View species modal
         function openViewModal(species) {
             // Set values in the modal
@@ -764,56 +818,56 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
             document.getElementById('viewSpeciesType').textContent = species.type;
             document.getElementById('viewSpeciesHabitat').textContent = species.habitat || 'Not specified';
             document.getElementById('viewSpeciesDate').textContent = species.date_created;
-            
+
             // Set edit link
             document.getElementById('editSpeciesLink').href = 'edit_species.php?id=' + species.id;
-            
+
             // Set conservation status with proper styling
             const statusContainer = document.getElementById('viewSpeciesConservationStatusContainer');
             let statusClass = '';
             let statusText = species.conservation_status || 'Not Specified';
-            
-            switch(species.conservation_status) {
-                case 'LC': 
-                    statusClass = 'status-lc'; 
+
+            switch (species.conservation_status) {
+                case 'LC':
+                    statusClass = 'status-lc';
                     statusText = 'Least Concern (LC)';
                     break;
-                case 'NT': 
-                    statusClass = 'status-nt'; 
+                case 'NT':
+                    statusClass = 'status-nt';
                     statusText = 'Near Threatened (NT)';
                     break;
-                case 'VU': 
-                    statusClass = 'status-vu'; 
+                case 'VU':
+                    statusClass = 'status-vu';
                     statusText = 'Vulnerable (VU)';
                     break;
-                case 'EN': 
-                    statusClass = 'status-en'; 
+                case 'EN':
+                    statusClass = 'status-en';
                     statusText = 'Endangered (EN)';
                     break;
-                case 'CR': 
-                    statusClass = 'status-cr'; 
+                case 'CR':
+                    statusClass = 'status-cr';
                     statusText = 'Critically Endangered (CR)';
                     break;
-                case 'EW': 
-                    statusClass = 'status-ew'; 
+                case 'EW':
+                    statusClass = 'status-ew';
                     statusText = 'Extinct in the Wild (EW)';
                     break;
-                case 'EX': 
-                    statusClass = 'status-ex'; 
+                case 'EX':
+                    statusClass = 'status-ex';
                     statusText = 'Extinct (EX)';
                     break;
             }
-            
+
             statusContainer.innerHTML = `<span class="conservation-status ${statusClass}">${statusText}</span>`;
-            
+
             // Display the modal
             viewModal.style.display = 'block';
         }
-        
+
         function closeViewModal() {
             viewModal.style.display = 'none';
         }
-        
+
         // Close modal when clicking outside of it
         window.onclick = function(event) {
             if (event.target == deleteModal) {
@@ -823,7 +877,7 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
                 closeViewModal();
             }
         }
-        
+
         // Auto-dismiss alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             const alerts = document.querySelectorAll('.alert');
@@ -839,4 +893,5 @@ $total_species = $conn->query("SELECT COUNT(*) as count FROM tbl_species")->fetc
         });
     </script>
 </body>
+
 </html>

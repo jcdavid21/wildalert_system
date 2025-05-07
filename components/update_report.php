@@ -25,10 +25,9 @@ $report_id = $_GET['id'];
 $user_id = $_SESSION['user_id'];
 
 // Get report details
-$report_query = "SELECT r.*, c.category_name, s.status_name 
+$report_query = "SELECT r.*, c.category_name 
                 FROM tbl_reports r
                 JOIN tbl_category c ON r.category_id = c.category_id
-                JOIN tbl_status s ON r.status_id = s.status_id
                 WHERE r.report_id = ? AND r.acc_id = ? AND r.status_report_id = 1";
 $stmt = $conn->prepare($report_query);
 $stmt->bind_param("ii", $report_id, $user_id);
@@ -49,10 +48,6 @@ $report = $report_result->fetch_assoc();
 $category_query = "SELECT category_id, category_name FROM tbl_category ORDER BY category_name";
 $category_result = $conn->query($category_query);
 
-// Get all species statuses
-$status_query = "SELECT status_id, status_name FROM tbl_status ORDER BY status_name";
-$status_result = $conn->query($status_query);
-
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate and sanitize input
@@ -60,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = intval($_POST['category_id']);
     $location = trim($_POST['location']);
     $date_time = $_POST['date_time'];
-    $status_id = intval($_POST['status_id']);
+    $status_name = trim($_POST['status_name']);
     $comments = trim($_POST['comments']);
     $update_date = date('Y-m-d H:i:s');
     $reporter_name = $report['reporter_name']; // Keep existing reporter name
@@ -79,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($date_time)) {
         $errors[] = "Date and time is required.";
     }
-    if ($status_id <= 0) {
-        $errors[] = "Please select a valid species status.";
+    if (empty($status_name)) {
+        $errors[] = "Species status is required.";
     }
     
     // Handle image upload if a new one is provided
@@ -137,17 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             category_id = ?, 
                             location = ?, 
                             date_time = ?, 
-                            status_id = ?, 
+                            status_name = ?, 
                             comments = ?, 
                             image_path = ? 
                         WHERE report_id = ? AND acc_id = ?";
-                        
-        // Debug the query and parameters (for development only)
-        // echo $update_query . "<br>";
-        // echo "Species: $species_name, Category: $category_id, Location: $location<br>";
-        // echo "Date: $date_time, Status: $status_id, Comments: $comments<br>";
-        // echo "Image: $image_path, Report ID: $report_id, User ID: $user_id<br>";
-        // exit();
                         
         $stmt = $conn->prepare($update_query);
         
@@ -160,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           $category_id, 
                           $location, 
                           $date_time, 
-                          $status_id, 
+                          $status_name, 
                           $comments, 
                           $image_path, 
                           $report_id, 
@@ -251,19 +239,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             
                             <div class="mb-3">
-                                <label for="status_id" class="form-label">Species Status *</label>
-                                <select class="form-select" id="status_id" name="status_id" required>
-                                    <option value="">-- Select Status --</option>
-                                    <?php 
-                                    // Reset the result pointer
-                                    $status_result->data_seek(0);
-                                    while ($status = $status_result->fetch_assoc()): 
-                                    ?>
-                                        <option value="<?php echo $status['status_id']; ?>" <?php echo ($status['status_id'] == $report['status_id']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($status['status_name']); ?>
-                                        </option>
-                                    <?php endwhile; ?>
-                                </select>
+                                <label for="status_name" class="form-label">Species Status *</label>
+                                <input type="text" class="form-control" id="status_name" name="status_name" value="<?php echo htmlspecialchars($report['status_name']); ?>" required>
                             </div>
                         </div>
                         
