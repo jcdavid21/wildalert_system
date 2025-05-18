@@ -103,40 +103,53 @@ def identify_species_detailed():
             # Comprehensive analysis prompt for species, status, and location
             analysis_prompt = """
             Analyze this wildlife image comprehensively and provide detailed information in JSON format:
-            
+
             1. Identify the species (common name and scientific name)
             2. Assess the status/condition of the animal
             3. Identify the likely habitat/location based on visual cues in the image
-            
+            4. If possible, estimate geographical coordinates based on visible environmental features
+
             For each identification, provide a confidence score that accurately reflects your certainty:
             - 90-100%: Very high confidence with clear visual evidence
             - 70-89%: Good confidence with some distinctive features visible
             - 50-69%: Moderate confidence with partial or unclear features
             - 30-49%: Low confidence, educated guess based on limited visual cues
             - Below 30%: Very uncertain, minimal distinguishing features visible
-            
+
             Format your response as a JSON object with these fields:
             {
                 "species": "Common name (Scientific name)",
                 "status": "One of: [Healthy, Injured, Endangered, Invasive]",
                 "location": "Habitat/location description based on visual cues",
+                "coordinates": {
+                    "latitude": 0.0,
+                    "longitude": 0.0
+                },
                 "features": ["feature1", "feature2", "feature3"],
                 "speciesConfidence": numerical value between 1-100,
                 "statusConfidence": numerical value between 1-100,
-                "locationConfidence": numerical value between 1-100
+                "locationConfidence": numerical value between 1-100,
+                "coordinatesConfidence": numerical value between 1-100
             }
-            
+
+            If you cannot identify geographical coordinates, use null values for latitude and longitude and set coordinatesConfidence to 0.
+
             If you cannot identify a species in the image, respond with:
             {
                 "species": "Unknown",
                 "status": "Unknown",
                 "location": "Unknown",
+                "coordinates": {
+                    "latitude": null,
+                    "longitude": null
+                },
                 "features": ["Not a clear wildlife image"],
                 "speciesConfidence": 0,
                 "statusConfidence": 0,
-                "locationConfidence": 0
+                "locationConfidence": 0,
+                "coordinatesConfidence": 0
             }
-            
+
             Return ONLY the JSON object, nothing else.
             """
             
@@ -160,7 +173,12 @@ def identify_species_detailed():
                 'features': analysis_data['features'],
                 'speciesConfidence': analysis_data['speciesConfidence'],
                 'statusConfidence': analysis_data['statusConfidence'],
-                'locationConfidence': analysis_data['locationConfidence']
+                'locationConfidence': analysis_data['locationConfidence'],
+                'coordinates': {
+                    'latitude': analysis_data.get('coordinates', {}).get('latitude'),
+                    'longitude': analysis_data.get('coordinates', {}).get('longitude')
+                },
+                'coordinatesConfidence': analysis_data.get('coordinatesConfidence', 0)
             }
             
             return jsonify(result)

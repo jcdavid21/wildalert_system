@@ -25,6 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $comments = $_POST['comments'] ?? null;
     // Use the user_id from session as acc_id
     $acc_id = $_SESSION['user_id'];
+    $coordinates = $_POST['coordinates'] ?? null;
 
     // Initialize variables
     $uploadOk = 1;
@@ -79,13 +80,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $uploadOk = 0;
     }
 
+
+
     // If image upload was successful or no image was required, insert into database
     if ($uploadOk == 1) {
         $sql = "INSERT INTO tbl_reports (category_id, reporter_name, species_name, image_path, location, date_time, status_name, comments, acc_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isssssssi", $category_id, $reporter_name, $species_name, $image_path, $location, $date_time, $status_name, $comments, $acc_id);
+        $stmt->bind_param("issssssss", $category_id, $reporter_name, $species_name, $image_path, $location, $date_time, $status_name, $comments, $acc_id);
 
         if ($stmt->execute()) {
             $success_message = "Report submitted successfully!";
@@ -124,6 +127,8 @@ $species_json = json_encode($species_list);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
         .report-form {
             background-color: #f8f9fa;
@@ -358,6 +363,18 @@ $species_json = json_encode($species_list);
                                 <label for="date_time" class="form-label">Date & Time of Observation</label>
                                 <input type="text" class="form-control" id="date_time" name="date_time" placeholder="YYYY-MM-DD HH:MM:SS" required>
                             </div>
+
+                            <input type="hidden" id="coordinates" name="coordinates" value="">
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="result-card">
+                                    <h5>Location on Map</h5>
+                                    <div id="mapContainer" style="height: 300px; width: 100%; border-radius: 5px;"></div>
+                                    <p class="text-muted mt-2"><small>Map location is approximate based on image analysis</small></p>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -396,9 +413,9 @@ $species_json = json_encode($species_list);
                                 <div class="col-md-4">
                                     <div class="result-card">
                                         <h5>Species Identification</h5>
-                                        <div class="d-flex align-items-center">
+                                        <div class="">
                                             <p id="identifiedSpecies" class="mb-0 me-2">Not identified yet</p>
-                                            <span id="speciesAccuracy" class="badge bg-success">0%</span>
+                                            <div id="speciesAccuracy" class="badge bg-success">0%</div>
                                         </div>
                                         <div class="accuracy-chart-container">
                                             <canvas id="speciesChart"></canvas>
@@ -408,9 +425,9 @@ $species_json = json_encode($species_list);
                                 <div class="col-md-4">
                                     <div class="result-card">
                                         <h5>Status Assessment</h5>
-                                        <div class="d-flex align-items-center">
+                                        <div class="">
                                             <p id="identifiedStatus" class="mb-0 me-2">Not assessed yet</p>
-                                            <span id="statusAccuracy" class="badge bg-success">0%</span>
+                                            <div id="statusAccuracy" class="badge bg-success">0%</div>
                                         </div>
                                         <div class="accuracy-chart-container">
                                             <canvas id="statusChart"></canvas>
@@ -420,9 +437,9 @@ $species_json = json_encode($species_list);
                                 <div class="col-md-4">
                                     <div class="result-card">
                                         <h5>Location Detection</h5>
-                                        <div class="d-flex align-items-center">
+                                        <div class="">
                                             <p id="identifiedLocation" class="mb-0 me-2">Not detected yet</p>
-                                            <span id="locationAccuracy" class="badge bg-success">0%</span>
+                                            <div id="locationAccuracy" class="badge bg-success">0%</div>
                                         </div>
                                         <div class="accuracy-chart-container">
                                             <canvas id="locationChart"></canvas>
@@ -610,6 +627,69 @@ $species_json = json_encode($species_list);
             document.getElementById('statusAccuracy').textContent = Math.round(data.statusConfidence) + '%';
             document.getElementById('locationAccuracy').textContent = Math.round(data.locationConfidence || 0) + '%';
 
+            // Add progress bars for more visual representation of confidence
+            const confidenceMetrics = [{
+                    id: 'speciesAccuracy',
+                    value: data.speciesConfidence,
+                    label: 'Species Identification Confidence'
+                },
+                {
+                    id: 'statusAccuracy',
+                    value: data.statusConfidence,
+                    label: 'Status Assessment Confidence'
+                },
+                {
+                    id: 'locationAccuracy',
+                    value: data.locationConfidence || 0,
+                    label: 'Location Detection Confidence'
+                }
+            ];
+
+            confidenceMetrics.forEach(metric => {
+                const container = document.getElementById(metric.id + 'Container');
+                const element = document.getElementById(metric.id);
+
+                if (!element) {
+                    console.warn(`Element with ID ${metric.id} not found`);
+                    return;
+                }
+
+                if (!container) {
+                    // Create container if it doesn't exist
+                    const div = document.createElement('div');
+                    div.id = metric.id + 'Container';
+                    div.className = 'mt-2';
+                    div.innerHTML = `
+                <label class="form-label small mb-1">${metric.label}</label>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar ${getProgressBarClass(metric.value)}" 
+                         role="progressbar" 
+                         style="width: ${metric.value}%;" 
+                         aria-valuenow="${metric.value}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            `;
+
+                    // Safely append the container after the element
+                    if (element.parentNode) {
+                        element.parentNode.appendChild(div);
+                    } else {
+                        // Fallback if parent node isn't available
+                        resultsSection.appendChild(div);
+                    }
+                } else {
+                    // Update existing container
+                    const progressBar = container.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = `${metric.value}%`;
+                        progressBar.setAttribute('aria-valuenow', metric.value);
+                        progressBar.className = `progress-bar ${getProgressBarClass(metric.value)}`;
+                    }
+                }
+            });
+
             // Set badge colors based on confidence
             setBadgeColor('speciesAccuracy', data.speciesConfidence);
             setBadgeColor('statusAccuracy', data.statusConfidence);
@@ -621,7 +701,6 @@ $species_json = json_encode($species_list);
                 [data.speciesConfidence, 100 - data.speciesConfidence],
                 ['#28a745', '#e9ecef']
             );
-
 
             // Create/update status confidence chart
             createOrUpdateChart('statusChart', statusChart,
@@ -637,19 +716,34 @@ $species_json = json_encode($species_list);
                 ['#fd7e14', '#e9ecef']
             );
 
-            // Display features if available
-            // if (data.features && data.features.length > 0) {
-            //     const featuresElement = document.getElementById('identifiedFeatures');
-            //     if (featuresElement) {
-            //         featuresElement.innerHTML = '';
-            //         data.features.forEach(feature => {
-            //             const badge = document.createElement('span');
-            //             badge.className = 'badge bg-light text-dark me-2 mb-2';
-            //             badge.textContent = feature;
-            //             featuresElement.appendChild(badge);
-            //         });
-            //     }
-            // }
+            // Initialize map if coordinates are available
+            if (data.coordinates && data.coordinates.latitude && data.coordinates.longitude) {
+                // Initialize Leaflet map
+                const map = L.map('mapContainer').setView([data.coordinates.latitude, data.coordinates.longitude], 10);
+
+                // Add OpenStreetMap tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // Add marker for the species location
+                const marker = L.marker([data.coordinates.latitude, data.coordinates.longitude]).addTo(map);
+                marker.bindPopup(`<b>${data.species}</b><br>${data.location}`).openPopup();
+
+                // Add circle to show approximate area
+                L.circle([data.coordinates.latitude, data.coordinates.longitude], {
+                    color: '#28a745',
+                    fillColor: '#28a745',
+                    fillOpacity: 0.2,
+                    radius: 5000 // 5km radius
+                }).addTo(map);
+
+                // Store coordinates in hidden form field
+                document.getElementById('coordinates').value = JSON.stringify(data.coordinates);
+            } else {
+                // If no coordinates, show placeholder message
+                document.getElementById('mapContainer').innerHTML = '<div class="alert alert-info my-3">No precise location coordinates detected from image.</div>';
+            }
         }
 
         function preventFileChange(e) {
@@ -676,6 +770,14 @@ $species_json = json_encode($species_list);
             } else {
                 badge.className = 'badge bg-danger';
             }
+        }
+
+        // Get appropriate color class for progress bar based on confidence
+        function getProgressBarClass(confidence) {
+            if (confidence >= 85) return 'bg-success';
+            if (confidence >= 70) return 'bg-info';
+            if (confidence >= 50) return 'bg-warning';
+            return 'bg-danger';
         }
 
         // Clear file input without resetting the entire form
